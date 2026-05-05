@@ -5,6 +5,7 @@ import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -112,22 +113,23 @@ public class ParallelReportBuilder {
 //            }));
             futures.add((Future<BatchStats>) pool.submit(() -> {
                 IntSummaryStatistics stats = new IntSummaryStatistics();
-                stats.getSum();
                 stats.getCount();
-                stats.getMax();
+                stats.getSum();
                 stats.getMin();
-                numberOfBatchesProcessed.incrementAndGet();
+                stats.getMax();
             }));
+            numberOfBatchesProcessed.incrementAndGet();
 
 //            batches.stream().forEach(futures.add(pool.submit(() -> {
-//                IntSummaryStatistics(totalAmount, totalCount, globalMax, globalMin);
-//            })))
+//                IntSummaryStatistics stats = new IntSummaryStatistics();
+//                IntStream.range(0, batch.size()).forEach(i -> {})
+//            }
+//            batches.stream().forEach(futures.add(pool.submit(() -> {
+//                IntSummaryStatistics stats = batches.stream().collect(Collectors.summarizingInt(batch::));
+//            })));
+
 
         }
-
-
-
-
 
         // TODO 2D: after all work has been started, collect results
         // and combine them into the summary variables above
