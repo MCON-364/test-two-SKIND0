@@ -1,6 +1,9 @@
 package edu.touro.las.mcon364.test2;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * ══════════════════════════════════════════════════════════════
@@ -51,10 +54,12 @@ public class InventoryManager {
 
     // TODO: initialise this field with a thread-safe Map implementation
     //       — which Map implementation from the lesson guarantees thread-safe reads and writes?
-    private final Map<String, Integer> stock = null; 
+    private final Map<String, Integer> stock = null;
+    ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
 
     // TODO: declare and initialise a private final field called totalUnitsAdded that tracks the
     //       running total of units ever added, thread-safely, without using synchronized
+    AtomicInteger totalUnitsAdded = new AtomicInteger(0);
 
 
     /**
@@ -66,12 +71,18 @@ public class InventoryManager {
      */
     public void addStock(String item, int qty) {
         // TODO: validate qty > 0
+        if (qty <= 0) {
+            throw new IllegalArgumentException("qty is less than 0");
+        }
 
         // TODO: atomically add qty to the item's current stock
         //       Hint: the thread-safe Map implementation you chose has a merge() method
         //             that can do this in one atomic step
+        map.merge(item, qty, Integer::sum); //thanks for the hint.
 
         // TODO: atomically add qty to totalUnitsAdded
+        totalUnitsAdded.addAndGet(qty);
+
 
     }
 
@@ -85,7 +96,9 @@ public class InventoryManager {
      */
     public boolean removeStock(String item, int qty) {
         // TODO: validate qty > 0
-
+        if (qty <= 0) {
+            throw new IllegalArgumentException("qty is less than 0");
+        }
 
         // TODO: atomically check-and-decrement.
         //       If current stock >= qty, subtract qty.
@@ -93,22 +106,34 @@ public class InventoryManager {
         //       Return true if stock was depleted, false if unchanged
         //       Hint: your chosen Map has a compute() method that lets you
         //             read and write in one atomic step.
-
-        return false; //placeholder
+        //thanks for the hint.
+        AtomicBoolean result = new AtomicBoolean(false);
+        map.compute(item,(key, current) -> {
+            if (current >= qty){
+                result.set(true);
+                return current - qty;
+            } else {
+                result.set(false);
+                return current;
+            }
+        });
+        return result.get();
     }
 
     /**
      * Returns the current stock for {@code item}, or 0 if unknown.
      */
     public int getStock(String item) {
-       return 0; //placeholder
+       //return 0; //placeholder
+        return map.getOrDefault(item, 0);
     }
 
     /**
      * Returns the cumulative number of units ever added (all items combined).
      */
     public int getTotalUnitsAdded() {
-        return 0; //placeholder
+        //return 0; //placeholder
+        return totalUnitsAdded.get();
     }
 
     /**
@@ -117,7 +142,8 @@ public class InventoryManager {
      */
     public Map<String, Integer> getSnapshot() {
         // TODO: return a defensive copy
-        return null; //placeholder
+        //return null; //placeholder
+        return Map.copyOf(map);
     }
 }
 
